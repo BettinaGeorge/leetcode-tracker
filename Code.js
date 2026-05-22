@@ -13,7 +13,7 @@ function sendDailyLeetCode() {
     }
   }
 
-  var email = "gobetti@unc.edu";
+  var email = Session.getActiveUser().getEmail();
 
   if (unsent.length === 0) {
     MailApp.sendEmail({ to: email, subject: "🎉 You finished every question!", htmlBody: "<h2>You crushed it! 🎉</h2><p>Every question is done. Add more, or start a review round!</p>" });
