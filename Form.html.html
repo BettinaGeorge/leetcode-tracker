@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LeetCode Tracker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; padding: 24px 20px; }
+    h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .sub { font-size: 13px; color: #64748b; margin-bottom: 28px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+    .tab { padding: 6px 16px; border-radius: 100px; border: 1px solid #334155; background: transparent; color: #64748b; font-size: 13px; cursor: pointer; }
+    .tab.active { background: #1e293b; color: #e2e8f0; border-color: #475569; }
+    select { width: 100%; padding: 13px; background: #1e293b; border: 1px solid #334155; border-radius: 10px; color: #e2e8f0; font-size: 15px; margin-bottom: 28px; appearance: none; }
+    .label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+    .btns { display: flex; gap: 10px; margin-bottom: 32px; }
+    .btn { flex: 1; padding: 16px 8px; border: 2px solid #334155; border-radius: 12px; background: #1e293b; color: #64748b; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .btn span { font-size: 24px; }
+    .btn.bad  { --c: #ef4444; }
+    .btn.mid  { --c: #f59e0b; }
+    .btn.good { --c: #10b981; }
+    .btn.selected, .btn:hover { border-color: var(--c); color: var(--c); background: #0f1117; }
+    .submit { width: 100%; padding: 16px; background: #1D9E75; border: none; border-radius: 12px; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; letter-spacing: .02em; }
+    .submit:disabled { background: #1e293b; color: #475569; cursor: default; }
+    .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: #1D9E75; color: #fff; padding: 12px 28px; border-radius: 100px; font-size: 14px; font-weight: 600; opacity: 0; transition: opacity .3s; white-space: nowrap; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <h1>🧠 LeetCode Tracker</h1>
+  <p class="sub">Log a question you just solved</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setFilter('pending', this)">Pending</button>
+    <button class="tab" onclick="setFilter('all', this)">All Questions</button>
+  </div>
+
+  <select id="q" onchange="check()">
+    <option value="">Loading...</option>
+  </select>
+
+  <div class="label">How did it go?</div>
+  <div class="btns">
+    <button class="btn bad"  onclick="pick('Bad', this)"><span>😬</span>Bad</button>
+    <button class="btn mid"  onclick="pick('Mid', this)"><span>😐</span>Mid</button>
+    <button class="btn good" onclick="pick('Good', this)"><span>😎</span>Good</button>
+  </div>
+
+  <button class="submit" id="sub" onclick="submit()" disabled>Mark as Done</button>
+  <div class="toast" id="toast">✓ Saved!</div>
+
+<script>
+  var all = [], conf = '', filter = 'pending';
+
+  function setFilter(f, el) {
+    filter = f;
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+    el.classList.add('active');
+    render();
+  }
+
+  function render() {
+    var sel = document.getElementById('q');
+    var list = all.filter(function(q){ return filter === 'all' || q.status !== 'Done'; });
+    sel.innerHTML = list.length
+      ? '<option value="">— pick a question —</option>' + list.map(function(q){
+          return '<option value="'+q.row+'">'+(q.sent?'📬 ':'')+q.name+(q.confidence?' ('+q.confidence+')':'')+'</option>';
+        }).join('')
+      : '<option value="">Nothing here!</option>';
+    check();
+  }
+
+  function pick(v, el) {
+    conf = v;
+    document.querySelectorAll('.btn').forEach(function(b){ b.classList.remove('selected'); });
+    el.classList.add('selected');
+    check();
+  }
+
+  function check() {
+    document.getElementById('sub').disabled = !(document.getElementById('q').value && conf);
+  }
+
+  function submit() {
+    var row = parseInt(document.getElementById('q').value);
+    if (!row || !conf) return;
+    document.getElementById('sub').disabled = true;
+    document.getElementById('sub').textContent = 'Saving…';
+    google.script.run.withSuccessHandler(function(){
+      var t = document.getElementById('toast');
+      t.classList.add('show');
+      setTimeout(function(){ t.classList.remove('show'); }, 2200);
+      conf = '';
+      document.querySelectorAll('.btn').forEach(function(b){ b.classList.remove('selected'); });
+      document.getElementById('sub').textContent = 'Mark as Done';
+      google.script.run.withSuccessHandler(function(data){ all = data; render(); }).getQuestions();
+    }).markDone(row, conf);
+  }
+
+  google.script.run.withSuccessHandler(function(data){ all = data; render(); }).getQuestions();
+</script>
+</body>
+</html>
